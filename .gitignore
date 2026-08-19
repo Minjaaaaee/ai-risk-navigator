@@ -1,0 +1,20 @@
+# Python
+finance/
+__pycache__/
+*.pyc
+.env
+*.env
+
+# Node
+node_modules/
+.next/
+frontend/.env.local
+
+# ML weights (용량 큼, 별도 관리)
+backend/app/models/weights/*.pt
+backend/app/models/weights/*.pkl
+ml_training/data/
+
+# OS
+.DS_Store
+Thumbs.db
