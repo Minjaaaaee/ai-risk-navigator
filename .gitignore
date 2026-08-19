@@ -18,3 +18,6 @@ ml_training/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# IDE 및 에디터 설정 파일
+.vscode/
