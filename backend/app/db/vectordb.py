@@ -51,3 +51,26 @@ def fetch_chunks_by_rcept_no(rcept_no: str) -> List[Dict[str, Any]]:
         .execute()
     )
     return result.data
+
+def search_similar_chunks(
+    query_embedding: List[float],
+    match_count: int = 5,
+    filter_rcept_no: str = None,
+) -> List[Dict[str, Any]]:
+    """
+    쿼리 임베딩과 유사한 청크를 pgvector 코사인 유사도로 검색
+    """
+    client = get_supabase_client()
+
+    # pgvector가 기대하는 문자열 포맷으로 명시적 변환
+    embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
+
+    result = client.rpc(
+        "match_document_chunks",
+        {
+            "query_embedding": embedding_str,
+            "match_count": match_count,
+            "filter_rcept_no": filter_rcept_no,
+        },
+    ).execute()
+    return result.data
