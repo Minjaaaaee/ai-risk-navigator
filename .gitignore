@@ -21,3 +21,5 @@ Thumbs.db
 
 # IDE 및 에디터 설정 파일
 .vscode/
+
+backend/app/data_sources/.kis_token_cache.json
