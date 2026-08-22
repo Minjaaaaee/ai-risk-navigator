@@ -45,17 +45,30 @@ def _build_prompt(question: str, chunks: list) -> str:
 답변은 3~5문장 이내로 간결하게 작성하세요."""
 
 
-def _call_llm(prompt: str) -> str:
+def _call_llm(prompt: str, max_retries: int = 3) -> str:
     """
     실제 LLM 호출부. 지금은 Gemini 3.6 Flash(무료).
     나중에 Claude API로 바꿀 때는 이 함수 내부만 교체하면 됨.
+    무료 티어는 가끔 일시적 과부하(503)가 발생해 재시도 로직 포함.
     """
+    import time
+
     client = get_gemini_client()
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt,
-    )
-    return response.text
+
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt,
+            )
+            return response.text
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # 1초, 2초, 4초 순으로 대기
+                print(f"  -> API 호출 실패 ({e}), {wait_time}초 후 재시도 ({attempt + 1}/{max_retries})...")
+                time.sleep(wait_time)
+            else:
+                raise
 
 
 def summarize_chunks(question: str, chunks: list) -> str:
