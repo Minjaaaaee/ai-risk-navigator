@@ -116,7 +116,7 @@ class KISClient:
 
         import datetime
         end_date = datetime.datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.datetime.now() - datetime.timedelta(days=period_days * 2)).strftime("%Y%m%d")
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=period_days)).strftime("%Y%m%d")
 
         params = {
             "FID_COND_MRKT_DIV_CODE": "U",
@@ -127,6 +127,36 @@ class KISClient:
         }
 
         response = requests.get(url, headers=headers, params=params, timeout=10)
+        response.raise_for_status()
+        return response.json()
+
+    def get_stock_daily_chart(self, stock_code: str, period_days: int = 90) -> dict:
+        """
+        개별종목 일별 시세 조회 (베타 계산용 과거 데이터)
+        stock_code: 6자리 종목코드 (예: "005930" 삼성전자)
+        """
+        url = f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+        headers = self._headers(tr_id="FHKST03010100")
+
+        import datetime
+        end_date = datetime.datetime.now().strftime("%Y%m%d")
+        start_date = (datetime.datetime.now() - datetime.timedelta(days=period_days * 2)).strftime("%Y%m%d")
+
+        params = {
+            "FID_COND_MRKT_DIV_CODE": "J",
+            "FID_INPUT_ISCD": stock_code,
+            "FID_INPUT_DATE_1": start_date,
+            "FID_INPUT_DATE_2": end_date,
+            "FID_PERIOD_DIV_CODE": "D",
+            "FID_ORG_ADJ_PRC": "1",
+        }
+
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if response.status_code != 200:
+            print(f"[에러 응답 - {stock_code}] status={response.status_code}")
+            print(f"[에러 본문] {response.text}")
+
         response.raise_for_status()
         return response.json()
 
