@@ -42,12 +42,16 @@ def classify_sentiment(article: dict) -> dict:
 
 def classify_articles(articles: list) -> list:
     """
-    여러 뉴스를 일괄 분류
+    여러 뉴스를 일괄 분류 (분당 5건 무료한도 대응, 건당 딜레이)
     """
+    import time
+
     results = []
-    for article in articles:
+    for i, article in enumerate(articles):
         classified = classify_sentiment(article)
         results.append(classified)
+        if i < len(articles) - 1:
+            time.sleep(13)  # 분당 5건 한도 -> 13초 간격이면 안전 (60/5=12초+여유)
     return results
 
 
