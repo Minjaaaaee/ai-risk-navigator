@@ -3,6 +3,9 @@
 종목명/지수 키워드와 뉴스 제목/본문 간 임베딩 코사인 유사도로 관련 뉴스만 선별
 """
 
+import os
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import sys
 import os
 

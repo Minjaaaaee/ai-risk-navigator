@@ -47,9 +47,9 @@ def _build_prompt(question: str, chunks: list) -> str:
 
 def _call_llm(prompt: str, max_retries: int = 3) -> str:
     """
-    실제 LLM 호출부. 지금은 Gemini 3.6 Flash(무료).
+    실제 LLM 호출부. 지금은 Gemini(무료 티어).
     나중에 Claude API로 바꿀 때는 이 함수 내부만 교체하면 됨.
-    무료 티어는 가끔 일시적 과부하(503)가 발생해 재시도 로직 포함.
+    무료 티어는 분당 요청수 제한(429)이 있어 재시도 로직 포함.
     """
     import time
 
@@ -58,14 +58,19 @@ def _call_llm(prompt: str, max_retries: int = 3) -> str:
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-3.6-flash",
+                model="gemini-3.5-flash-lite",
                 contents=prompt,
             )
             return response.text
         except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                wait_time = 65  # 분당 한도이므로 넉넉하게 65초 대기
+            else:
+                wait_time = 2 ** attempt
+
             if attempt < max_retries - 1:
-                wait_time = 2 ** attempt  # 1초, 2초, 4초 순으로 대기
-                print(f"  -> API 호출 실패 ({e}), {wait_time}초 후 재시도 ({attempt + 1}/{max_retries})...")
+                print(f"  -> API 호출 실패, {wait_time}초 후 재시도 ({attempt + 1}/{max_retries})...")
                 time.sleep(wait_time)
             else:
                 raise
