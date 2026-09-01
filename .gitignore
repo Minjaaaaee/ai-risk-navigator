@@ -19,7 +19,8 @@ ml_training/data/
 .DS_Store
 Thumbs.db
 
-# IDE 및 에디터 설정 파일
+# IDE 및 에디터 설정 파일cd ..
 .vscode/
 
 backend/app/data_sources/.kis_token_cache.json
+backend/app/batch/.briefing_state.json
