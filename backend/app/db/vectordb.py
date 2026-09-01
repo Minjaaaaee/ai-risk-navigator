@@ -52,6 +52,7 @@ def fetch_chunks_by_rcept_no(rcept_no: str) -> List[Dict[str, Any]]:
     )
     return result.data
 
+
 def search_similar_chunks(
     query_embedding: List[float],
     match_count: int = 5,
@@ -73,4 +74,39 @@ def search_similar_chunks(
             "filter_rcept_no": filter_rcept_no,
         },
     ).execute()
+    return result.data
+
+
+def get_cached_commentary(stock_code: str, trade_date: str) -> dict:
+    """
+    캐시된 종목 코멘터리 조회. 없으면 None 반환.
+    """
+    client = get_supabase_client()
+    result = (
+        client.table("stock_commentary_cache")
+        .select("*")
+        .eq("stock_code", stock_code)
+        .eq("trade_date", trade_date)
+        .execute()
+    )
+    if result.data:
+        return result.data[0]
+    return None
+
+
+def save_commentary_cache(stock_code: str, trade_date: str, stock_name: str, commentary: dict) -> dict:
+    """
+    종목 코멘터리를 캐시에 저장 (같은 키로 이미 있으면 덮어쓰기)
+    """
+    client = get_supabase_client()
+    result = (
+        client.table("stock_commentary_cache")
+        .upsert({
+            "stock_code": stock_code,
+            "trade_date": trade_date,
+            "stock_name": stock_name,
+            "commentary": commentary,
+        }, on_conflict="stock_code,trade_date")
+        .execute()
+    )
     return result.data
