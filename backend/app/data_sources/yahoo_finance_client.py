@@ -43,6 +43,32 @@ def get_index_data(index_name: str = "나스닥", period_days: int = 5) -> dict:
     }
 
 
+def get_index_history(index_name: str = "나스닥", period: str = "6mo") -> dict:
+    """
+    지수 과거 일별 시세 조회 (국면분류 학습용, 더 긴 기간)
+    period: yfinance 기간 문자열 (예: "3mo", "6mo", "1y")
+    """
+    ticker_symbol = INDEX_TICKERS.get(index_name)
+    if not ticker_symbol:
+        raise ValueError(f"알 수 없는 지수명: {index_name}")
+
+    ticker = yf.Ticker(ticker_symbol)
+    hist = ticker.history(period=period)
+
+    if len(hist) < 30:
+        raise ValueError(f"{index_name} 데이터가 부족합니다 (최소 30일 필요)")
+
+    dates = [d.strftime("%Y%m%d") for d in hist.index]
+    closes = hist["Close"].values
+    volumes = hist["Volume"].values
+
+    return {
+        "dates": dates,
+        "closes": closes,
+        "volumes": volumes,
+    }
+
+
 if __name__ == "__main__":
     for index_name in ["나스닥", "S&P500"]:
         data = get_index_data(index_name)
