@@ -69,6 +69,22 @@ def get_index_history(index_name: str = "나스닥", period: str = "6mo") -> dic
     }
 
 
+def get_asset_history(ticker: str, period: str = "1y") -> dict:
+    """
+    임의 티커의 과거 일별 시세 조회 (자산배분용 범용 함수)
+    """
+    t = yf.Ticker(ticker)
+    hist = t.history(period=period)
+
+    if len(hist) < 30:
+        raise ValueError(f"{ticker} 데이터가 부족합니다")
+
+    dates = [d.strftime("%Y%m%d") for d in hist.index]
+    closes = hist["Close"].values
+
+    return {"dates": dates, "closes": closes}
+
+
 if __name__ == "__main__":
     for index_name in ["나스닥", "S&P500"]:
         data = get_index_data(index_name)
