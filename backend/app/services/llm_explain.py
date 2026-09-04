@@ -151,6 +151,47 @@ def explain_index_commentary_card(commentary_text: str, user_profile: str = "위
     return _call_llm(prompt)
 
 
+# ============================================================
+# 기술4-3 - 환노출 시나리오 카드 자연어 설명
+# ============================================================
+
+def _build_fx_scenario_prompt(scenario_result: dict, tone: str = "객관적이고 담백한 톤으로") -> str:
+    exposure = scenario_result["exposure"]
+    regime = scenario_result["fx_regime"]
+    scenario = scenario_result["scenario"]
+
+    has_hedge = "hedge_recommendations" in scenario_result
+    hedge_text = ""
+    if has_hedge:
+        names = ", ".join(h["name"] for h in scenario_result["hedge_recommendations"])
+        hedge_text = f"환헤지 ETF 후보: {names}"
+
+    return f"""당신은 금융 서비스의 AI 설명 어시스턴트입니다.
+아래 환노출 리스크 정보를 사용자에게 설명해주세요.
+
+환노출비중: {exposure['fx_exposure_pct']}% (임계치 {exposure['threshold_pct']}% {'초과' if exposure['exceeds_threshold'] else '이내'})
+현재 환변동성 국면: {regime['predicted_regime']}
+원/달러 +{scenario['shift_pct']}% 시 영향: 총자산 대비 {scenario['impact_up_pct_of_total']:+}%
+원/달러 -{scenario['shift_pct']}% 시 영향: 총자산 대비 {scenario['impact_down_pct_of_total']:+}%
+{hedge_text}
+
+요구사항:
+- {tone} 설명할 것
+- 환율 방향을 예측하듯 말하지 말고, "이 정도 변동이 오면 이런 영향이 있다"는 시나리오로만 설명할 것
+- 임계치 초과 시에만 헤지 ETF를 자연스럽게 언급, 초과 아니면 언급하지 말 것
+- 3문장 이내로 간결하게
+"""
+
+
+def explain_fx_scenario_card(scenario_result: dict, user_profile: str = "위험중립형") -> str:
+    """
+    fx_scenario.py의 simulate_fx_scenario() 결과를 받아 자연어 설명 생성
+    """
+    tone = TONE_BY_PROFILE.get(user_profile, TONE_BY_PROFILE["위험중립형"])
+    prompt = _build_fx_scenario_prompt(scenario_result, tone)
+    return _call_llm(prompt)
+
+
 if __name__ == "__main__":
     import sys
     sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
