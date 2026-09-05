@@ -56,18 +56,27 @@ def generate_selected_stock_commentary(
             for c in classified
         )
 
-        direction = "상승" if stock["excess_return_pct"] > 0 else "하락"
+        performance_desc = (
+            "선방(초과수익)" if stock["excess_return_pct"] > 0
+            else "부진(초과손실)" if stock["excess_return_pct"] < 0
+            else "예상과 유사한 흐름"
+        )
+        actual_direction = (
+            "상승" if stock["stock_return_pct"] > 0
+            else "하락" if stock["stock_return_pct"] < 0
+            else "보합"
+        )
 
         prompt = f"""당신은 금융시장을 분석해 투자자에게 설명하는 애널리스트입니다.
 
-{stock_name}이(가) 오늘 {stock['stock_return_pct']}% {direction}했습니다.
+{stock_name}은(는) 오늘 실제로 {stock['stock_return_pct']}% {actual_direction}했습니다.
 {index_name} 지수는 {stock['index_return_pct']}% 움직였고, 베타({stock['beta']})를 감안한 예상 움직임은 {stock['expected_return_pct']}%였습니다.
-즉 지수 요인을 제외한 순수 종목 고유 초과수익률은 {stock['excess_return_pct']}%p 입니다.
+즉 지수 요인을 감안했을 때 예상보다 {performance_desc}했으며, 순수 종목 고유 초과수익률은 {stock['excess_return_pct']}%p 입니다.
 
 관련 뉴스 및 감성분류 결과:
 {news_summary}
 
-위 정보를 바탕으로, {stock_name}이(가) 지수 대비 왜 초과로 {direction}했는지 2~3문장으로 설명하세요.
+위 정보를 바탕으로, {stock_name}의 실제 주가 움직임({actual_direction})과, 지수 대비 {performance_desc}한 이유를 2~3문장으로 설명하세요.
 지수 요인이 아닌 종목 고유 이슈에 초점을 맞추세요. 근거자료에 명확한 이유가 없으면 그렇다고 밝히세요."""
 
         commentary = _call_llm(prompt)
