@@ -110,3 +110,37 @@ def save_commentary_cache(stock_code: str, trade_date: str, stock_name: str, com
         .execute()
     )
     return result.data
+
+
+def get_cached_top_movers(trade_date: str, top_n: int) -> list:
+    """
+    캐시된 전종목 스캐닝 결과 조회. 없으면 None 반환.
+    """
+    client = get_supabase_client()
+    result = (
+        client.table("top_movers_cache")
+        .select("*")
+        .eq("trade_date", trade_date)
+        .eq("top_n", top_n)
+        .execute()
+    )
+    if result.data:
+        return result.data[0]["movers"]
+    return None
+
+
+def save_top_movers_cache(trade_date: str, top_n: int, movers: list) -> dict:
+    """
+    전종목 스캐닝 결과를 캐시에 저장 (같은 날짜+top_n이면 덮어쓰기)
+    """
+    client = get_supabase_client()
+    result = (
+        client.table("top_movers_cache")
+        .upsert({
+            "trade_date": trade_date,
+            "top_n": top_n,
+            "movers": movers,
+        }, on_conflict="trade_date,top_n")
+        .execute()
+    )
+    return result.data
