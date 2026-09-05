@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes_index import router as index_router
 from app.api.routes_portfolio import router as portfolio_router
 from app.api.routes_terms import router as terms_router
+from app.api.routes_fx import router as fx_router
 
 app = FastAPI(title="AI 리스크 내비게이터 API")
 
@@ -36,3 +37,7 @@ app.include_router(portfolio_router)
 
 # 약관·공시 쉬운말 번역 RAG API 라우트
 app.include_router(terms_router)
+
+
+# 해외주식 환노출 리스크 경고 API
+app.include_router(fx_router)
