@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes_index import router as index_router
+from app.api.routes_portfolio import router as portfolio_router
 
 app = FastAPI(title="AI 리스크 내비게이터 API")
 
@@ -26,3 +27,7 @@ def root():
 
 # 지수/종목 코멘터리 라우터 등록
 app.include_router(index_router)
+
+
+# 심플홈, 포트폴리오 최적화, 국면분류 API
+app.include_router(portfolio_router)
