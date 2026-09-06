@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useSearchParams } from "next/navigation";
 import { getStockCommentary, type StockCommentary } from "@/lib/api";
 import LedgerRow from "@/components/LedgerRow";
 
@@ -10,16 +11,18 @@ export default function StockPage({
   params: Promise<{ code: string }>;
 }) {
   const { code } = use(params);
+  const searchParams = useSearchParams();
+  const nameFromQuery = searchParams.get("name") ?? undefined;
+
   const [data, setData] = useState<StockCommentary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
-
     setData(null);
     setError(null);
 
-    getStockCommentary(code)
+    getStockCommentary(code, nameFromQuery)
       .then((res) => {
         if (ignore) return;
         setData(res);
@@ -33,7 +36,7 @@ export default function StockPage({
     return () => {
       ignore = true;
     };
-  }, [code]);
+  }, [code, nameFromQuery]);
 
   const excessTone =
     data && data.excess_return_pct > 0
@@ -85,9 +88,14 @@ export default function StockPage({
             tone={excessTone}
           />
 
-          <p className="mt-5 text-sm leading-relaxed text-ink-soft">
-            {data.commentary}
-          </p>
+          <div className="mt-5 border-t border-line pt-4">
+            <p className="font-mono text-[10px] tracking-wide text-amber">
+              AI ANALYSIS
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              {data.commentary}
+            </p>
+          </div>
         </div>
       )}
     </main>

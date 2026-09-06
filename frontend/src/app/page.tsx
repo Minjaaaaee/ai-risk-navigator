@@ -47,7 +47,7 @@ export default function ScanPage() {
         <p className="font-mono text-xs tracking-wide text-ink-soft">
           AI 리스크 내비게이터
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">오늘의 상황판</h1>
+        <h1 className="mt-2 text-2xl font-semibold">마켓 브리핑</h1>
       </header>
 
       {error && (
