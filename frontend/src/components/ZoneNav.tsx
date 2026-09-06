@@ -32,6 +32,7 @@ export default function ZoneNav() {
             <Link
               key={zone.code}
               href={zone.href}
+              prefetch={false}
               className={[
                 "flex-1 border-t border-line px-6 py-4 transition-colors md:border-t-0 md:border-l-2",
                 active
