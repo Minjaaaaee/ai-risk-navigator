@@ -2,7 +2,10 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
 async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`API 오류 (${res.status}): ${path}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail || `API 오류 (${res.status}): ${path}`);
+  }
   return res.json();
 }
 
@@ -12,7 +15,10 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`API 오류 (${res.status}): ${path}`);
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => null);
+    throw new Error(errBody?.detail || `API 오류 (${res.status}): ${path}`);
+  }
   return res.json();
 }
 
@@ -62,4 +68,19 @@ export function getRegime() {
     domestic: { predicted_regime: string; probabilities: Record<string, number> };
     overseas: { predicted_regime: string; probabilities: Record<string, number> };
   }>("/api/portfolio/regime");
+}
+
+export interface StockCommentary {
+  stock_code: string;
+  stock_name: string;
+  stock_return_pct: number;
+  index_return_pct: number;
+  beta: number;
+  excess_return_pct: number;
+  commentary: string;
+}
+
+export function getStockCommentary(code: string, name?: string) {
+  const query = name ? `?name=${encodeURIComponent(name)}` : "";
+  return apiGet<StockCommentary>(`/api/stock/${code}/commentary${query}`);
 }
