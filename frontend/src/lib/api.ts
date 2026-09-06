@@ -108,3 +108,39 @@ export function summarizeTerms(question: string, matchCount = 3) {
     match_count: matchCount,
   });
 }
+
+export interface IndexCommentary {
+  index_name: string;
+  change_rate_pct: number;
+  is_event: boolean;
+  direction: string;
+  commentary: string;
+  // 국내
+  current?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  threshold_pct?: number;
+  intraday_range_ratio?: number;
+  // 해외
+  current_close?: number;
+  prev_close?: number;
+}
+
+export interface TopMoverStock {
+  stock_code: string;
+  stock_name: string;
+  stock_return_pct: number;
+  index_return_pct: number;
+  beta: number;
+  excess_return_pct: number;
+  commentary: string;
+}
+
+export function getIndexCommentary(market: "domestic" | "overseas") {
+  return apiGet<IndexCommentary>(`/api/index/commentary?market=${market}`);
+}
+
+export function getTopMovers(limit = 5) {
+  return apiGet<TopMoverStock[]>(`/api/index/top-movers?limit=${limit}`);
+}

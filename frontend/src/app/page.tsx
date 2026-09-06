@@ -2,37 +2,43 @@
 
 import { useEffect, useState } from "react";
 import {
-  getSimpleHome,
-  getRegime,
-  type HomeCard,
-  type AllocationMap,
+  getIndexCommentary,
+  getTopMovers,
+  type IndexCommentary,
+  type TopMoverStock,
 } from "@/lib/api";
-import RegimeGauge from "@/components/RegimeGauge";
-import RebalancingPanel from "@/components/RebalancingPanel";
-import EducationPanel from "@/components/EducationPanel";
+import IndexCard from "@/components/IndexCard";
+import Link from "next/link";
 
-const DEFAULT_ALLOCATION: AllocationMap = {
-  국내주식: 50,
-  해외주식: 20,
-  채권: 20,
-  현금: 10,
-};
-
-export default function HomePage() {
-  const [cards, setCards] = useState<HomeCard[] | null>(null);
-  const [regime, setRegime] = useState<Awaited<ReturnType<typeof getRegime>> | null>(null);
+export default function ScanPage() {
+  const [domestic, setDomestic] = useState<IndexCommentary | null>(null);
+  const [overseas, setOverseas] = useState<IndexCommentary | null>(null);
+  const [movers, setMovers] = useState<TopMoverStock[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let ignore = false;
+
     Promise.all([
-      getSimpleHome("위험중립형", DEFAULT_ALLOCATION),
-      getRegime(),
+      getIndexCommentary("domestic"),
+      getIndexCommentary("overseas"),
+      getTopMovers(5),
     ])
-      .then(([homeRes, regimeRes]) => {
-        setCards(homeRes.cards);
-        setRegime(regimeRes);
+      .then(([d, o, m]) => {
+        if (ignore) return;
+        setDomestic(d);
+        setOverseas(o);
+        setMovers(m);
+        setError(null);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        if (ignore) return;
+        setError(e.message);
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   return (
@@ -41,7 +47,7 @@ export default function HomePage() {
         <p className="font-mono text-xs tracking-wide text-ink-soft">
           AI 리스크 내비게이터
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">현재 항로</h1>
+        <h1 className="mt-2 text-2xl font-semibold">오늘의 상황판</h1>
       </header>
 
       {error && (
@@ -50,24 +56,42 @@ export default function HomePage() {
         </div>
       )}
 
-      {!error && !regime && (
+      {!error && (!domestic || !overseas) && (
         <div className="animate-pulse space-y-3">
-          <div className="h-24 bg-line/40" />
-          <div className="h-40 bg-line/40" />
+          <div className="h-32 bg-line/40" />
+          <div className="h-32 bg-line/40" />
         </div>
       )}
 
-      {regime && <RegimeGauge regime={regime} />}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {domestic && <IndexCard label="코스피" data={domestic} />}
+        {overseas && <IndexCard label="나스닥" data={overseas} />}
+      </div>
 
-      <section className="mt-10 space-y-4">
-        {cards?.map((card, i) =>
-          card.type === "rebalancing" ? (
-            <RebalancingPanel key={i} card={card} />
-          ) : (
-            <EducationPanel key={i} card={card} />
-          )
-        )}
-      </section>
+      {movers && movers.length > 0 && (
+        <section className="mt-6 border border-line bg-panel">
+          <p className="border-b border-line px-6 py-3 font-mono text-xs text-ink-soft">
+            오늘의 이상 움직임 TOP {movers.length}
+          </p>
+          {movers.map((m) => (
+            <Link
+              key={m.stock_code}
+              href={`/stock/${m.stock_code}`}
+              className="flex items-center justify-between border-b border-line/60 px-6 py-3 text-sm last:border-b-0 hover:bg-line/20"
+            >
+              <span>{m.stock_name}</span>
+              <span
+                className={`font-mono text-xs ${
+                  m.excess_return_pct >= 0 ? "text-teal" : "text-coral"
+                }`}
+              >
+                {m.excess_return_pct >= 0 ? "+" : ""}
+                {m.excess_return_pct}%p
+              </span>
+            </Link>
+          ))}
+        </section>
+      )}
     </main>
   );
 }
