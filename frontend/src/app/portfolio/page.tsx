@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   getSimpleHome,
   getRegime,
@@ -22,14 +23,25 @@ export default function PortfolioPage() {
   const [cards, setCards] = useState<HomeCard[] | null>(null);
   const [regime, setRegime] = useState<Awaited<ReturnType<typeof getRegime>> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [riskProfile, setRiskProfile] = useState("위험중립형");
 
   useEffect(() => {
     let ignore = false;
 
-    Promise.all([
-      getSimpleHome("위험중립형", DEFAULT_ALLOCATION),
-      getRegime(),
-    ])
+    let profile = "위험중립형";
+    let allocation = DEFAULT_ALLOCATION;
+
+    const saved = localStorage.getItem("riskProfile");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        profile = parsed.riskProfile ?? profile;
+        allocation = parsed.allocation ?? allocation;
+      } catch {}
+    }
+    setRiskProfile(profile);
+
+    Promise.all([getSimpleHome(profile, allocation), getRegime()])
       .then(([homeRes, regimeRes]) => {
         if (ignore) return;
         setCards(homeRes.cards);
@@ -48,11 +60,19 @@ export default function PortfolioPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-12">
-      <header className="mb-10">
-        <p className="font-mono text-xs tracking-wide text-ink-soft">
-          AI 리스크 내비게이터
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold">현재 항로</h1>
+      <header className="mb-10 flex items-start justify-between">
+        <div>
+          <p className="font-mono text-xs tracking-wide text-ink-soft">
+            AI 리스크 내비게이터 · {riskProfile}
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold">현재 항로</h1>
+        </div>
+        <Link
+          href="/onboarding"
+          className="font-mono text-xs text-ink-soft hover:text-amber"
+        >
+          프로필 재설정
+        </Link>
       </header>
 
       {error && (
