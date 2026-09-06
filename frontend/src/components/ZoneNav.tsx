@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ZONES = [
   { code: "01", label: "SCAN", ko: "상황판", href: "/" },
-  { code: "02", label: "PORTFOLIO", ko: "포트폴리오", href: "/" },
+  { code: "02", label: "PORTFOLIO", ko: "포트폴리오", href: "/portfolio" },
   { code: "03", label: "TERMS", ko: "약관", href: "/terms" },
   { code: "04", label: "FX", ko: "환노출", href: "/fx-risk" },
 ];
