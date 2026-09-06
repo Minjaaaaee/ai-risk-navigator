@@ -84,3 +84,27 @@ export function getStockCommentary(code: string, name?: string) {
   const query = name ? `?name=${encodeURIComponent(name)}` : "";
   return apiGet<StockCommentary>(`/api/stock/${code}/commentary${query}`);
 }
+
+export interface TermsChunk {
+  id: number;
+  rcept_no: string;
+  corp_name: string;
+  report_nm: string;
+  chunk_index: number;
+  content: string;
+  similarity: number;
+}
+
+export interface TermsSummarizeResult {
+  question: string;
+  chunks_found: number;
+  chunks?: TermsChunk[];
+  answer: string;
+}
+
+export function summarizeTerms(question: string, matchCount = 3) {
+  return apiPost<TermsSummarizeResult>("/api/terms/summarize", {
+    question,
+    match_count: matchCount,
+  });
+}
