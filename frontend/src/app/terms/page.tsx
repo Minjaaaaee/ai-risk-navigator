@@ -34,7 +34,7 @@ export default function TermsPage() {
         <p className="font-mono text-xs tracking-wide text-ink-soft">
           약관·공시 쉬운말 번역
         </p>
-        <h1 className="mt-2 text-2xl font-semibold">뭐가 궁금하세요?</h1>
+        <h1 className="mt-2 text-2xl font-semibold">공시·약관 질의응답</h1>
       </header>
 
       <form onSubmit={handleSubmit} className="flex gap-2">

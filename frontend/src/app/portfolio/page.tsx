@@ -65,7 +65,7 @@ export default function PortfolioPage() {
           <p className="font-mono text-xs tracking-wide text-ink-soft">
             AI 리스크 내비게이터 · {riskProfile}
           </p>
-          <h1 className="mt-2 text-2xl font-semibold">현재 항로</h1>
+          <h1 className="mt-2 text-2xl font-semibold">자산배분 분석</h1>
         </div>
         <Link
           href="/onboarding"
