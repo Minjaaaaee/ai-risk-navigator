@@ -1,7 +1,19 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
+async function fetchWithRetry(url: string, options?: RequestInit, retries = 1): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 300));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw err;
+  }
+}
+
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const res = await fetchWithRetry(`${API_BASE}${path}`, { cache: "no-store" });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(body?.detail || `API 오류 (${res.status}): ${path}`);
@@ -10,7 +22,7 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetchWithRetry(`${API_BASE}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -143,4 +155,36 @@ export function getIndexCommentary(market: "domestic" | "overseas") {
 
 export function getTopMovers(limit = 5) {
   return apiGet<TopMoverStock[]>(`/api/index/top-movers?limit=${limit}`);
+}
+
+export interface Holding {
+  ticker: string;
+  value_krw: number;
+}
+
+export interface FxScenarioResult {
+  exposure: {
+    total_value_krw: number;
+    currency_breakdown: Record<string, { value_krw: number; ratio_pct: number }>;
+    fx_exposure_pct: number;
+    threshold_pct: number;
+    exceeds_threshold: boolean;
+  };
+  fx_regime: {
+    predicted_regime: string;
+    probabilities?: Record<string, number>;
+  };
+  scenario: {
+    shift_pct: number;
+    impact_up_krw: number;
+    impact_up_pct_of_total: number;
+    impact_down_krw: number;
+    impact_down_pct_of_total: number;
+  };
+  hedge_recommendations?: { name: string; note: string }[];
+  explanation: string;
+}
+
+export function getFxScenario(holdings: Holding[]) {
+  return apiPost<FxScenarioResult>("/api/fx/scenario", { holdings });
 }
