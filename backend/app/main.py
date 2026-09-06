@@ -13,9 +13,15 @@ from app.api.routes_fx import router as fx_router
 app = FastAPI(title="AI 리스크 내비게이터 API")
 
 # 프론트엔드(Next.js, 로컬 개발 포트)에서 호출 허용
+# 개발 환경에선 Dev Tunnels 및 로컬 접속을 모두 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 나중에 배포 URL 추가
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://txnc2w05-3000.jpe1.devtunnels.ms",
+    ],
+    allow_origin_regex=r"https://.*\.devtunnels\.ms",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
