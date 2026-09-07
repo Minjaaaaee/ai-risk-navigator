@@ -153,8 +153,8 @@ export function getIndexCommentary(market: "domestic" | "overseas") {
   return apiGet<IndexCommentary>(`/api/index/commentary?market=${market}`);
 }
 
-export function getTopMovers(limit = 5) {
-  return apiGet<TopMoverStock[]>(`/api/index/top-movers?limit=${limit}`);
+export function getTopMovers(limit = 5, market: "domestic" | "overseas" = "domestic") {
+  return apiGet<TopMoverStock[]>(`/api/index/top-movers?limit=${limit}&market=${market}`);
 }
 
 export interface Holding {
