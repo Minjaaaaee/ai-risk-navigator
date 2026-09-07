@@ -14,6 +14,8 @@ import statsmodels.api as sm
 
 from app.data_sources.kis_client import KISClient
 
+from app.data_sources.yahoo_finance_client import get_index_history, get_asset_history
+
 # 샘플 종목 (MVP 단계 - 시총 상위 위주, 추후 전종목으로 확장 가능)
 SAMPLE_STOCKS = {
     "005930": "삼성전자",
@@ -143,6 +145,104 @@ def scan_stocks(stock_dict: dict = SAMPLE_STOCKS, index_name: str = "코스피")
             results.append(result)
         except Exception as e:
             print(f"[에러] {name}({code}) 처리 실패: {e}")
+        time.sleep(0.3)
+
+    valid_results = [r for r in results if "error" not in r]
+    valid_results.sort(key=lambda x: abs(x["excess_return_pct"]), reverse=True)
+
+    return valid_results
+
+
+# 해외 샘플 종목 (MVP 단계)
+SAMPLE_OVERSEAS_STOCKS = {
+    "NVDA": "엔비디아",
+    "AAPL": "애플",
+    "MSFT": "마이크로소프트",
+    "AMZN": "아마존",
+    "GOOGL": "알파벳",
+}
+
+
+def align_yahoo_returns(index_hist: dict, stock_hist: dict):
+    """
+    yahoo_finance_client의 dates/closes 배열 2개를 날짜 기준으로 정렬해
+    공통 날짜의 일별 수익률(pct change) 시퀀스를 계산
+    (ondemand_stock_commentary.py와 동일 로직 - 공용 함수로 이동)
+    """
+    index_map = dict(zip(index_hist["dates"], index_hist["closes"]))
+    stock_map = dict(zip(stock_hist["dates"], stock_hist["closes"]))
+
+    common_dates = sorted(set(index_map) & set(stock_map))
+    if len(common_dates) < 2:
+        return [], [], []
+
+    index_closes = [index_map[d] for d in common_dates]
+    stock_closes = [stock_map[d] for d in common_dates]
+
+    index_returns = [
+        (index_closes[i] - index_closes[i - 1]) / index_closes[i - 1]
+        for i in range(1, len(index_closes))
+    ]
+    stock_returns = [
+        (stock_closes[i] - stock_closes[i - 1]) / stock_closes[i - 1]
+        for i in range(1, len(stock_closes))
+    ]
+
+    return common_dates[1:], index_returns, stock_returns
+
+
+def calculate_overseas_excess_return(
+    ticker: str,
+    stock_name: str,
+    index_hist: dict,
+) -> dict:
+    """
+    해외 종목 1개에 대해 베타 추정 + 당일 초과수익률 계산 (야후파이낸스 기반)
+    """
+    stock_hist = get_asset_history(ticker, period="6mo")
+
+    common_dates, index_returns, stock_returns = align_yahoo_returns(index_hist, stock_hist)
+
+    if len(common_dates) < 10:
+        return {
+            "stock_code": ticker,
+            "stock_name": stock_name,
+            "error": f"공통 날짜 데이터 부족 ({len(common_dates)}건)",
+        }
+
+    beta = estimate_beta(stock_returns, index_returns)
+
+    stock_today_return = stock_returns[-1]
+    index_today_return = index_returns[-1]
+
+    expected_return = beta * index_today_return
+    excess_return = stock_today_return - expected_return
+
+    return {
+        "stock_code": ticker,
+        "stock_name": stock_name,
+        "beta": round(beta, 3),
+        "stock_return_pct": round(stock_today_return * 100, 2),
+        "index_return_pct": round(index_today_return * 100, 2),
+        "expected_return_pct": round(expected_return * 100, 2),
+        "excess_return_pct": round(excess_return * 100, 2),
+        "matched_date": common_dates[-1],
+    }
+
+
+def scan_overseas_stocks(stock_dict: dict = SAMPLE_OVERSEAS_STOCKS, index_name: str = "나스닥") -> list:
+    """
+    해외 여러 종목에 대해 일괄 초과수익률 스캐닝 (나스닥 대비)
+    """
+    index_hist = get_index_history(index_name, period="6mo")
+
+    results = []
+    for ticker, name in stock_dict.items():
+        try:
+            result = calculate_overseas_excess_return(ticker, name, index_hist)
+            results.append(result)
+        except Exception as e:
+            print(f"[에러] {name}({ticker}) 처리 실패: {e}")
         time.sleep(0.3)
 
     valid_results = [r for r in results if "error" not in r]

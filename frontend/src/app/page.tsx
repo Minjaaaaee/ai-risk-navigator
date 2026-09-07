@@ -11,9 +11,14 @@ import IndexCard from "@/components/IndexCard";
 import Link from "next/link";
 
 export default function ScanPage() {
+  // 1. 코스피 / 나스닥 지수 데이터 state
   const [domestic, setDomestic] = useState<IndexCommentary | null>(null);
   const [overseas, setOverseas] = useState<IndexCommentary | null>(null);
-  const [movers, setMovers] = useState<TopMoverStock[] | null>(null);
+
+  // 2. 국내 / 해외 이상 움직임 TOP 5 state (기존 movers 제거 후 분리)
+  const [domesticMovers, setDomesticMovers] = useState<TopMoverStock[] | null>(null);
+  const [overseasMovers, setOverseasMovers] = useState<TopMoverStock[] | null>(null);
+
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,13 +27,15 @@ export default function ScanPage() {
     Promise.all([
       getIndexCommentary("domestic"),
       getIndexCommentary("overseas"),
-      getTopMovers(5),
+      getTopMovers(5, "domestic"),
+      getTopMovers(5, "overseas"),
     ])
-      .then(([d, o, m]) => {
+      .then(([d, o, dm, om]) => {
         if (ignore) return;
         setDomestic(d);
         setOverseas(o);
-        setMovers(m);
+        setDomesticMovers(dm);
+        setOverseasMovers(om);
         setError(null);
       })
       .catch((e) => {
@@ -68,29 +75,37 @@ export default function ScanPage() {
         {overseas && <IndexCard label="나스닥" data={overseas} />}
       </div>
 
-      {movers && movers.length > 0 && (
-        <section className="mt-6 border border-line bg-panel">
-          <p className="border-b border-line px-6 py-3 font-mono text-xs text-ink-soft">
-            오늘의 이상 움직임 TOP {movers.length}
-          </p>
-          {movers.map((m) => (
-            <Link
-              key={m.stock_code}
-              href={`/stock/${m.stock_code}`}
-              className="flex items-center justify-between border-b border-line/60 px-6 py-3 text-sm last:border-b-0 hover:bg-line/20"
-            >
-              <span>{m.stock_name}</span>
-              <span
-                className={`font-mono text-xs ${
-                  m.excess_return_pct >= 0 ? "text-teal" : "text-coral"
-                }`}
-              >
-                {m.excess_return_pct >= 0 ? "+" : ""}
-                {m.excess_return_pct}%p
-              </span>
-            </Link>
-          ))}
-        </section>
+      {/* 국내 및 해외 TOP 5 섹션 분리 렌더링 */}
+      {[
+        { label: "국내 이상 움직임 TOP 5", data: domesticMovers },
+        { label: "해외 이상 움직임 TOP 5", data: overseasMovers },
+      ].map(
+        ({ label, data }) =>
+          data &&
+          data.length > 0 && (
+            <section key={label} className="mt-6 border border-line bg-panel">
+              <p className="border-b border-line px-6 py-3 font-mono text-xs text-ink-soft">
+                {label}
+              </p>
+              {data.map((m) => (
+                <Link
+                  key={m.stock_code}
+                  href={`/stock/${m.stock_code}?name=${encodeURIComponent(m.stock_name)}`}
+                  className="flex items-center justify-between border-b border-line/60 px-6 py-3 text-sm last:border-b-0 hover:bg-line/20"
+                >
+                  <span>{m.stock_name}</span>
+                  <span
+                    className={`font-mono text-xs ${
+                      m.excess_return_pct >= 0 ? "text-teal" : "text-coral"
+                    }`}
+                  >
+                    {m.excess_return_pct >= 0 ? "+" : ""}
+                    {m.excess_return_pct}%p
+                  </span>
+                </Link>
+              ))}
+            </section>
+          )
       )}
     </main>
   );

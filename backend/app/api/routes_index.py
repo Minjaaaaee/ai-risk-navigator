@@ -30,17 +30,20 @@ def get_index_commentary(market: str = Query("domestic", enum=["domestic", "over
 
 
 @router.get("/index/top-movers")
-def get_top_movers(limit: int = Query(5, ge=1, le=30)):
+def get_top_movers(
+    limit: int = Query(5, ge=1, le=30),
+    market: str = Query("domestic", enum=["domestic", "overseas"]),
+):
     """
     전종목 스캐닝 이상 움직임 종목 TOP N (기술1-2) - 배치 캐시 조회 전용
     """
     trade_date = datetime.now().strftime("%Y%m%d")
     try:
-        cached = get_cached_top_movers(trade_date, limit)
+        cached = get_cached_top_movers(trade_date, limit, market=market)
         if cached is None:
             raise HTTPException(
                 status_code=503,
-                detail="오늘자 스캐닝 결과가 아직 준비되지 않았습니다. 배치 작업(job_scan_daily.py) 실행 후 다시 시도해주세요."
+                detail=f"오늘자 {market} 스캐닝 결과가 아직 준비되지 않았습니다. 배치 작업(job_scan_daily.py) 실행 후 다시 시도해주세요."
             )
         return cached
     except HTTPException:
